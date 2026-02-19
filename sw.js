@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tv-schedule-v1';
+const CACHE_NAME = 'tv-schedule-v2';
 const ASSETS = [
   '/',
   '/index.html',
