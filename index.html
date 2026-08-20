@@ -26,7 +26,8 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 1400px;
+            width: 96%;
             margin: 0 auto;
             padding: 1rem;
         }
@@ -35,6 +36,7 @@
             text-align: center;
             padding: 1.5rem 0;
             color: white;
+            position: relative;
         }
 
         h1 {
@@ -49,18 +51,36 @@
             opacity: 0.9;
         }
 
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.4);
+            color: white;
+            border-radius: 20px;
+            padding: 0.5rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .header-btn:active {
+            background: rgba(255,255,255,0.35);
+        }
+
         .tabs {
             display: flex;
-            overflow-x: auto;
+            flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1rem;
             padding: 0.5rem 0;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .tabs::-webkit-scrollbar {
-            display: none;
+            justify-content: center;
         }
 
         .tab {
@@ -96,11 +116,16 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+
         .service-card {
             background: white;
             border-radius: 16px;
             padding: 1rem;
-            margin-bottom: 1rem;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
@@ -324,6 +349,11 @@
         <header>
             <h1>📺 TV Schedule</h1>
             <div class="current-date" id="currentDate"></div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="exportData()">⬇️ Export Data</button>
+                <button class="header-btn" onclick="document.getElementById('importFile').click()">⬆️ Import Data</button>
+                <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
+            </div>
         </header>
 
         <div class="tabs" id="dayTabs"></div>
@@ -393,10 +423,51 @@
 
         // ── App Logic ────────────────────────────────────────────────────
         const STORAGE_KEY = 'tvScheduleData';
-        const initialData = {"Paramount Plus":{"Monday":[{"name":"DMV","date":"Feb 23"},{"name":"The Neighborhood","date":"February 23"}],"Tuesday":[{"name":"NCIS: Origins","date":"Mar 03"},{"name":"NCIS: Sydney","date":"Mar 04"},{"name":"NCIS","date":"March 3"}],"Wednesday":[],"Thursday":[{"name":"9-1-1","date":"February 26"},{"name":"911: Nashville","date":"February 26"},{"name":"George and Mandy","date":"February 26"},{"name":"Elsbeth","date":"February 26"},{"name":"Ghosts","date":"February 26"},{"name":"Starfleet Academy","date":"NEW"}],"Friday":[{"name":"Boston Blue","date":"Feb 27"},{"name":"Fire Country","date":"Feb 27"},{"name":"Sheriff Country","date":"Feb 27"}],"Saturday":[],"Sunday":[{"name":"Tracker","date":"Mar 01"}]},"Hulu":{"Monday":[{"name":"Rookie","date":"New"}],"Tuesday":[{"name":"High Potential","date":null},{"name":"Best Medicine","date":null},{"name":"Doc","date":"March 3 ???"}],"Wednesday":[{"name":"Abbott Elementary","date":"Wednesday, March 3"},{"name":"Will Trent","date":"NEW"}],"Thursday":[{"name":"Animal Control","date":"February 26"},{"name":"Going Dutch","date":"February 26"}],"Friday":[],"Saturday":[{"name":"Code 3","date":null}],"Sunday":[]},"Peacock":{"Monday":[{"name":"Brilliant Minds","date":"UNKNOWN"}],"Tuesday":[{"name":"St. Denis","date":"Monday, March 3"}],"Wednesday":[],"Thursday":[{"name":"The Hunting Party","date":"February 26"}],"Friday":[{"name":"Happy's Place","date":"February 27"}],"Saturday":[],"Sunday":[]},"Movies":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]},"Netflix":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]},"Prime Video":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]},"Disney Plus":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]},"HBO Max":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]},"Apple TV":{"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[]}};
-        
+
+        // Services: original streaming services + 2 blank "networks" for trying out new channels.
+        // Days: Mon-Sun plus a trailing "Movies" tab (same service cards, for undated movie titles).
+        const initialData = {
+"Paramount Plus": {
+  "Monday": [{"name":"FBI","date":"Oct 5, 2026"},{"name":"CIA","date":"Oct 5, 2026"}],
+  "Tuesday": [{"name":"NCIS: Origins","date":"Oct 6, 2026"},{"name":"NCIS","date":"Oct 6, 2026"},{"name":"NCIS: Sydney","date":"Held for midseason (early 2027)"}],
+  "Wednesday": [],
+  "Thursday": [{"name":"9-1-1","date":"Oct 15, 2026"},{"name":"9-1-1: Nashville","date":"Oct 15, 2026"},{"name":"Georgie & Mandy's First Marriage","date":"Oct 8, 2026"},{"name":"Elsbeth","date":"Oct 8, 2026"},{"name":"Ghosts","date":"Halloween special Oct 29, 2026; full season held for midseason 2027"},{"name":"Star Trek: Starfleet Academy (Season 2, final)","date":"Early 2027 (exact date TBA)"}],
+  "Friday": [{"name":"Boston Blue","date":"Oct 9, 2026"},{"name":"Fire Country","date":"Oct 9, 2026"},{"name":"Sheriff Country","date":"Oct 9, 2026"}],
+  "Saturday": [],
+  "Sunday": [{"name":"Tracker","date":"Oct 4, 2026"}],
+  "Movies": []
+},
+"Hulu": {
+  "Monday": [{"name":"The Rookie","date":"Held for midseason (expected Jan 2027)"}],
+  "Tuesday": [{"name":"High Potential","date":"Held for midseason (expected Jan/early 2027)"},{"name":"Best Medicine","date":"Sept 22, 2026"},{"name":"Doc","date":"Sept 22, 2026"}],
+  "Wednesday": [{"name":"Abbott Elementary","date":"Oct 7, 2026"},{"name":"Will Trent","date":"Held for midseason (expected Jan 2027)"},{"name":"Scrubs","date":"Sept 30, 2026"}],
+  "Thursday": [{"name":"Animal Control","date":"Sept 27, 2026"}],
+  "Friday": [],
+  "Saturday": [{"name":"Code 3","date":null}],
+  "Sunday": [],
+  "Movies": []
+},
+"Peacock": {
+  "Monday": [{"name":"Brilliant Minds","date":null}],
+  "Tuesday": [{"name":"St. Denis Medical","date":"Nov 2, 2026"}],
+  "Wednesday": [],
+  "Thursday": [{"name":"Law & Order: SVU","date":"Oct 8, 2026"}],
+  "Friday": [{"name":"Happy's Place","date":"Oct 23, 2026"}],
+  "Saturday": [],
+  "Sunday": [],
+  "Movies": []
+},
+"Netflix": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"Prime Video": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"Disney Plus": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"HBO Max": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"Apple TV": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"Network 1": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]},
+"Network 2": {"Monday":[],"Tuesday":[],"Wednesday":[],"Thursday":[],"Friday":[],"Saturday":[],"Sunday":[],"Movies":[]}
+};
+
         let scheduleData = {};
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Movies'];
         let currentDay = '';
 
         function loadData() {
@@ -422,6 +493,44 @@
             }
         }
 
+        // ── Export / Import (manual sync between devices, no backend needed) ──
+        function exportData() {
+            const dataStr = JSON.stringify(scheduleData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `tv-schedule-backup-${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (confirm('This will replace all shows currently in this app with the imported file. Continue?')) {
+                        scheduleData = imported;
+                        saveData();
+                        displayDay(currentDay || getTodayDay());
+                        alert('Schedule imported successfully!');
+                    }
+                } catch (err) {
+                    alert('That file could not be read as a valid schedule backup (invalid JSON).');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // allow re-importing the same file later
+        }
+
         function getTodayDay() {
             const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             return dayNames[new Date().getDay()];
@@ -435,12 +544,12 @@
         function createTabs() {
             const tabsContainer = document.getElementById('dayTabs');
             const today = getTodayDay();
-            
+
             days.forEach(day => {
                 const tab = document.createElement('button');
                 tab.className = 'tab';
                 tab.textContent = day;
-                
+
                 if (day === today) {
                     const indicator = document.createElement('span');
                     indicator.className = 'today-indicator';
@@ -448,7 +557,7 @@
                     tab.classList.add('active');
                     currentDay = day;
                 }
-                
+
                 tab.onclick = function() { switchTab(day, this); };
                 tabsContainer.appendChild(tab);
             });
@@ -465,30 +574,33 @@
             const contentDiv = document.getElementById('scheduleContent');
             contentDiv.innerHTML = '';
 
+            const grid = document.createElement('div');
+            grid.className = 'service-grid';
+
             const services = Object.keys(scheduleData);
-            
+
             services.forEach(service => {
-                const shows = scheduleData[service][day];
-                
+                const shows = (scheduleData[service] && scheduleData[service][day]) || [];
+
                 const card = document.createElement('div');
                 card.className = 'service-card';
-                
+
                 const header = document.createElement('div');
                 header.className = 'service-header';
-                
+
                 const serviceName = document.createElement('div');
                 serviceName.className = 'service-name';
                 serviceName.textContent = service;
-                
+
                 const addBtn = document.createElement('button');
                 addBtn.className = 'add-show-btn';
                 addBtn.textContent = '+ Add';
                 addBtn.onclick = function() { openAddModal(service, day); };
-                
+
                 header.appendChild(serviceName);
                 header.appendChild(addBtn);
                 card.appendChild(header);
-                
+
                 if (shows.length === 0) {
                     const empty = document.createElement('div');
                     empty.className = 'empty-state';
@@ -497,52 +609,54 @@
                 } else {
                     const showList = document.createElement('div');
                     showList.className = 'show-list';
-                    
+
                     shows.forEach((show, index) => {
                         const showItem = document.createElement('div');
                         showItem.className = 'show-item';
-                        
+
                         const showInfo = document.createElement('div');
                         showInfo.className = 'show-info';
-                        
+
                         const showName = document.createElement('div');
                         showName.className = 'show-name';
                         showName.textContent = show.name;
                         showInfo.appendChild(showName);
-                        
+
                         if (show.date) {
                             const showDate = document.createElement('div');
                             showDate.className = 'show-date';
                             showDate.textContent = 'Premieres: ' + show.date;
                             showInfo.appendChild(showDate);
                         }
-                        
+
                         const actions = document.createElement('div');
                         actions.className = 'show-actions';
-                        
+
                         const editBtn = document.createElement('button');
                         editBtn.className = 'btn-icon';
                         editBtn.textContent = '✏️';
                         editBtn.onclick = function() { openEditModal(service, day, index); };
-                        
+
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'btn-icon';
                         deleteBtn.textContent = '🗑️';
                         deleteBtn.onclick = function() { deleteShow(service, day, index); };
-                        
+
                         actions.appendChild(editBtn);
                         actions.appendChild(deleteBtn);
-                        
+
                         showItem.appendChild(showInfo);
                         showItem.appendChild(actions);
                         showList.appendChild(showItem);
                     });
-                    
+
                     card.appendChild(showList);
                 }
-                
-                contentDiv.appendChild(card);
+
+                grid.appendChild(card);
             });
+
+            contentDiv.appendChild(grid);
         }
 
         function openAddModal(service, day) {
@@ -571,21 +685,23 @@
 
         document.getElementById('showForm').onsubmit = function(e) {
             e.preventDefault();
-            
+
             const service = document.getElementById('editService').value;
             const day = document.getElementById('editDay').value;
             const index = document.getElementById('editIndex').value;
             const name = document.getElementById('showNameInput').value.trim();
             const date = document.getElementById('showDateInput').value.trim() || null;
-            
+
             const showData = { name: name, date: date };
-            
+
+            if (!scheduleData[service][day]) scheduleData[service][day] = [];
+
             if (index === '') {
                 scheduleData[service][day].push(showData);
             } else {
                 scheduleData[service][day][index] = showData;
             }
-            
+
             saveData();
             displayDay(day);
             closeModal();
