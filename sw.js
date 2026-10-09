@@ -1,8 +1,8 @@
-const CACHE_NAME = 'tv-schedule-v2';
+const CACHE_NAME = 'tv-schedule-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 // Install: cache all core assets
@@ -29,7 +29,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => caches.match('/index.html'));
+      return cached || fetch(event.request).catch(() => caches.match('./index.html'));
     })
   );
 });
