@@ -360,6 +360,24 @@
         <button id="installBtn" onclick="installApp()">Install</button>
     </div>
 
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+        const firebaseApp = initializeApp({
+            apiKey: "AIzaSyDeivM1RGAGa7wFUb757vzK2IV_yT1u0oM",
+            authDomain: "tv-schedule-99659.firebaseapp.com",
+            projectId: "tv-schedule-99659",
+            appId: "1:541377707141:web:6d2669e2511911d2507dec"
+        });
+        window._db = getFirestore(firebaseApp);
+        window._fbReady = true;
+        window._fbDoc = () => doc(window._db, 'schedule', 'shared');
+        window._fbGet = getDoc;
+        window._fbSet = setDoc;
+    </script>
+
     <script>
         // ── Service Worker Registration ──────────────────────────────────
         if ('serviceWorker' in navigator) {
@@ -421,13 +439,13 @@
             if (state === 'saved') setTimeout(() => { el.style.opacity = '0'; }, 2000);
         }
 
-        // ── KV sync via Pages Function ───────────────────────────────────
+        // ── Firebase sync ────────────────────────────────────────────────
         async function loadFromCloud() {
             try {
-                const res = await fetch('/api');
-                if (!res.ok) throw new Error('Network error');
-                const data = await res.json();
-                if (data) {
+                if (!window._fbReady) throw new Error('Firebase not ready');
+                const snap = await window._fbGet(window._fbDoc());
+                if (snap.exists()) {
+                    const data = snap.data().schedule;
                     scheduleData = data;
                     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
                     return true;
@@ -441,12 +459,8 @@
         async function saveToCloud(data) {
             setSyncStatus('syncing');
             try {
-                const res = await fetch('/api', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (!res.ok) throw new Error('Save failed');
+                if (!window._fbReady) throw new Error('Firebase not ready');
+                await window._fbSet(window._fbDoc(), { schedule: data });
                 setSyncStatus('saved');
             } catch(e) {
                 setSyncStatus('offline');
