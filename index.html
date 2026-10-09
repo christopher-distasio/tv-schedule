@@ -376,6 +376,7 @@
         window._fbDoc = () => doc(window._db, 'schedule', 'shared');
         window._fbGet = getDoc;
         window._fbSet = setDoc;
+        window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
     <script>
@@ -664,10 +665,26 @@
             }
         }
 
-        // Initialize
+        // Initialize — wait for Firebase module to load before reading cloud data
         displayCurrentDate();
         createTabs();
-        loadData().then(() => displayDay(currentDay || getTodayDay()));
+        function startApp() {
+            loadData().then(() => displayDay(currentDay || getTodayDay()));
+        }
+        if (window._fbReady) {
+            startApp();
+        } else {
+            // Module scripts are async; wait up to 4s then fall back to localStorage
+            const fbTimeout = setTimeout(() => {
+                window.removeEventListener('firebase-ready', onFbReady);
+                startApp();
+            }, 4000);
+            function onFbReady() {
+                clearTimeout(fbTimeout);
+                startApp();
+            }
+            window.addEventListener('firebase-ready', onFbReady, { once: true });
+        }
     </script>
 </body>
 </html>
